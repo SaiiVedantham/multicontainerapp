@@ -7,19 +7,24 @@ on:
 
 jobs:
   deploy:
+    name: Deploy app on EC2
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout Code
+      - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Deploy to EC2 via SSH
-        uses: appleboy/ssh-action@v1.0.3
+      - name: Add SSH Key
+        uses: webfactory/ssh-agent@v0.7.0
         with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USERNAME }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            cd ~/multi-container-app
-            git pull
-            sudo docker-compose down
-            sudo docker-compose up -d –build
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Deploy to EC2
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} "
+            cd ${{ secrets.DOCKER_COMPOSE_PATH }} &&
+            sudo git pull &&
+            sudo docker-compose down &&
+            sudo docker-compose up -d --build
+          "
+
